@@ -21,10 +21,10 @@ layout = dict(
 )
 
 app.layout = html.Div([
-    html.H1(children='Analyse historique des Jeux Olympiques'),
+    html.H1(children='Hello Dash'),
 
     html.Div(children='''
-        Étude des données historiques des JO pour les États-Unis et l'Italie
+        Dash: A web application framework for your data.
     '''),
 
     html.Div(
@@ -42,15 +42,15 @@ app.layout = html.Div([
                             marks={str(year): str(year) for year in np.arange(1896, 2024, 16)},
                             id='year-slider'
                         ),
-                        html.P("Type d'affichage:", className="control_label"),
+                        html.P("Sexe à afficher :", className="control_label"),
                         dcc.RadioItems(
-                            id="well_status_selector",
+                            id="data_selector",
                             options=[
-                                {"label": "All ", "value": "all"},
-                                {"label": "Active only ", "value": "active"},
-                                {"label": "Customize ", "value": "custom"},
+                                {"label": "Total ", "value": "All"},
+                                {"label": "Homme ", "value": "Man"},
+                                {"label": "Femme ", "value": "Woman"},
                             ],
-                            value="active",
+                            value="All",
                             labelStyle={"display": "inline-block"},
                             className="dcc_control",
                         ),
@@ -117,21 +117,29 @@ app.layout = html.Div([
 
 
 # Helper functions
-def filter_dataframe(df, pays, year_slider):
-    dff = df[
-        df["country_name"].isin(pays)
-    ]
+def filter_dataframe(df, pays, sexe, year_slider):
+    if sexe == "All":
+        dff = df[
+            df["country_name"].isin(pays)
+        ]
+
+    else:
+        dff = df[
+            df["country_name"].isin(pays)
+            & df["sexe"].isin([sexe])
+        ]
     return dff
 
 
 @app.callback(
     Output('graph-with-slider', 'figure'),
     Input('year-slider', 'value'),
-    Input('pays_menu', 'value'))
-def update_figure(selected_year, pays):
+    Input('pays_menu', 'value'),
+    Input('data_selector', 'value'))
+def update_figure(selected_year, pays, sexe):
     layout_count = copy.deepcopy(layout)
 
-    dff = filter_dataframe(df, pays, selected_year)
+    dff = filter_dataframe(df, pays, sexe, selected_year)
 
     medal_count = dff.groupby(by="date").count().medal_type
     athlete_count = dff.groupby(by="date").count().athlete_url
@@ -144,7 +152,7 @@ def update_figure(selected_year, pays):
             colors2.append("rgb(199, 255, 123)")
         else:
             colors.append("rgba(123, 199, 255, 0.2)")
-            colors2.append("rgb(199, 255, 123, 0.2)")
+            colors2.append("rgba(199, 255, 123, 0.2)")
 
     data = [
         dict(
@@ -195,14 +203,16 @@ def update_figure(selected_year, pays):
 # Selectors -> well text
 @app.callback(
     Output("medal_text", "children"),
-    [
-        Input("year-slider", "value"),
-    ],
+    Input("year-slider", "value"),
+    Input('pays_menu', 'value'),
+    Input('data_selector', 'value')
 )
-def update_medal_text(year_slider):
+def update_medal_text(year_slider, pays, sexe):
 
-    dff = df.groupby(by="date").count().medal_type
-    return dff.loc[year_slider[0]:year_slider[1]+4].sum()
+    dff = filter_dataframe(df, pays, sexe, year_slider)
+
+    dff_final = dff.groupby(by="date").count().medal_type
+    return dff_final.loc[year_slider[0]:year_slider[1]+4].sum()
 
 
 if __name__ == '__main__':
