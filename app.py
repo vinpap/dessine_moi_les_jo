@@ -8,6 +8,18 @@ import numpy as np
 
 df = pd.read_csv('greece_results.csv')
 
+def load_italy_data():
+    # Chargez votre dataframe et renvoyez-la (il faut ajouter une colonne avec men/women s'il n'y en a pas déjà)
+    # Renvoyez cette dataframe
+    return 
+
+def load_usa_data():
+    return
+
+
+italy_df = load_italy_data()
+us_df = load_usa_data()
+
 app = Dash(__name__)
 
 layout = dict(
