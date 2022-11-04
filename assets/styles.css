@@ -3,6 +3,14 @@
   margin-right: 3.5%;
 }
 
+.js-plotly-plot .plotly .main-svg {
+  top: -15px;
+}
+
+.main-svg {
+  top: -15px;
+}
+
 body {
   background-color: #f2f2f2;
   margin: 5%;
@@ -140,4 +148,8 @@ body {
 #pie_graph > div > div > svg:nth-child(3) > g.infolayer > g.legend {
   pointer-events: all;
   transform: translate(30px, 349px);
+}
+
+.plot-container {
+  height: 330px;
 }
