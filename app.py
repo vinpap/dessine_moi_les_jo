@@ -6,19 +6,8 @@ import copy
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('greece_results.csv')
+df = pd.read_csv('data/results.csv')
 
-def load_italy_data():
-    # Chargez votre dataframe et renvoyez-la (il faut ajouter une colonne avec men/women s'il n'y en a pas déjà)
-    # Renvoyez cette dataframe
-    return 
-
-def load_usa_data():
-    return
-
-
-italy_df = load_italy_data()
-us_df = load_usa_data()
 
 app = Dash(__name__)
 
@@ -33,10 +22,10 @@ layout = dict(
 )
 
 app.layout = html.Div([
-    html.H1(children='Hello Dash'),
+    html.H1(children='Dashboard des JO'),
 
     html.Div(children='''
-        Dash: A web application framework for your data.
+        Dashboard pour le brief Dessine moi les JO.
     '''),
 
     html.Div(
@@ -44,7 +33,7 @@ app.layout = html.Div([
                 html.Div(
                     [
                         html.P(
-                            "Filter by construction date (or select range in histogram):",
+                            "Filtrer les résultats par date:",
                             className="control_label",
                         ),
                             dcc.RangeSlider(
@@ -73,12 +62,6 @@ app.layout = html.Div([
                             value=list(["Greece"]),
                             className="dcc_control",
                         ),
-                        dcc.Checklist(
-                            id="lock_selector",
-                            options=[{"label": "Lock camera", "value": "locked"}],
-                            className="dcc_control",
-                            value=[],
-                        ),
                     ],
                     className="pretty_container four columns",
                     id="cross-filter-options",
@@ -93,19 +76,12 @@ app.layout = html.Div([
                                     className="mini_container",
                                 ),
                                 html.Div(
-                                    [html.H6(id="gasText"), html.P("Gas")],
-                                    id="gas",
-                                    className="mini_container",
+                                    [dcc.Graph(id="individual_graph")],
+                                    className="pretty_container five columns",
                                 ),
                                 html.Div(
-                                    [html.H6(id="oilText"), html.P("Oil")],
-                                    id="oil",
-                                    className="mini_container",
-                                ),
-                                html.Div(
-                                    [html.H6(id="waterText"), html.P("Water")],
-                                    id="water",
-                                    className="mini_container",
+                                    [dcc.Graph(id="athlete_graph")],
+                                    className="pretty_container four columns",
                                 ),
                             ],
                             id="info-container",
@@ -122,7 +98,7 @@ app.layout = html.Div([
                 ),
             ],
             className="row flex-display",
-        )
+        ),
 
     #dcc.Graph(id='graph-with-slider'),
 ])
@@ -201,7 +177,7 @@ def update_figure(selected_year, pays, sexe):
         ),
     ]
 
-    layout_count["title"] = "Completed Wells/Year"
+    layout_count["title"] = "Nombre d'athlètes et de médailles"
     layout_count["dragmode"] = "select"
     layout_count["showlegend"] = True
     layout_count["autosize"] = True
@@ -212,7 +188,7 @@ def update_figure(selected_year, pays, sexe):
 
 
 
-# Selectors -> well text
+# Selectors -> medal text
 @app.callback(
     Output("medal_text", "children"),
     Input("year-slider", "value"),
@@ -225,6 +201,27 @@ def update_medal_text(year_slider, pays, sexe):
 
     dff_final = dff.groupby(by="date").count().medal_type
     return dff_final.loc[year_slider[0]:year_slider[1]+4].sum()
+
+
+# Selectors -> 10 bests figure
+@app.callback(
+    Output("individual_graph", "figure"),
+    Input("year-slider", "value"),
+    Input('pays_menu', 'value'),
+    Input('data_selector', 'value')
+)
+def update_10_bests(year_slider, pays, sexe):
+
+    dff = filter_dataframe(df, pays, sexe, year_slider)
+
+    dff_final = dff.groupby(by="athlete_url").count().sort_values(by="medal_type", ascending=False)[:10]
+    names = []
+    for row in dff_final.iterrows():
+        names.append(row[0].split("/")[-1].split("-")[-1])
+
+    fig = px.bar(dff_final, x=np.array(names), y="medal_type")
+
+    return fig
 
 
 if __name__ == '__main__':
