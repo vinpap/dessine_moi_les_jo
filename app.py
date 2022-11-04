@@ -57,7 +57,7 @@ app.layout = html.Div([
                         ),
                         dcc.Dropdown(
                             id="pays_menu",
-                            options=["Greece"],
+                            options=["Greece", "Italy", "United States of America"],
                             multi=True,
                             value=list(["Greece"]),
                             className="dcc_control",
