@@ -57,9 +57,9 @@ app.layout = html.Div([
                         ),
                         dcc.Dropdown(
                             id="pays_menu",
-                            options=["Greece", "Italie", "Etats-Unis"],
+                            options=["Greece", "Italy", "United States of America"],
                             multi=True,
-                            value=list(["Greece"]),
+                            value=["Italy"],
                             className="dcc_control",
                         ),
                     ],
@@ -78,14 +78,18 @@ app.layout = html.Div([
                                 html.Div(
                                     [dcc.Graph(id="individual_graph")],
                                     className="pretty_container five columns",
+                                    style={"height" : "100%"}
                                 ),
                                 html.Div(
-                                    [dcc.Graph(id="athlete_graph")],
+                                    [html.Div(id="img_best"),
+                                    html.H6("Meilleur athlète"), html.P(id="medals_best")],
                                     className="pretty_container four columns",
                                 ),
+
                             ],
                             id="info-container",
                             className="row container-display",
+                            style={"object-fit" : "contain"}
                         ),
                         html.Div(
                             [dcc.Graph(id="graph-with-slider")],
@@ -222,6 +226,87 @@ def update_10_bests(year_slider, pays, sexe):
     fig = px.bar(dff_final, x=np.array(names), y="medal_type")
 
     return fig
+
+
+
+# Selectors -> best medal text
+@app.callback(
+    Output("medals_best", "children"),
+    Input("year-slider", "value"),
+    Input('pays_menu', 'value'),
+    Input('data_selector', 'value')
+)
+def update_medal_text(year_slider, pays, sexe):
+
+    res_str = ""
+    
+    dff = filter_dataframe(df, pays, sexe, year_slider)
+
+    if not dff.medal_type.notnull().values.any():
+        res_str = ""
+
+    else:
+        url_best = dff.groupby(by="athlete_url").count().sort_values(by="medal_type", ascending=False)[:1].index[0]
+
+        res_str += url_best.split("/")[-1].split("-")[0] + " " + url_best.split("/")[-1].split("-")[1] + ": "
+
+        results_best = dff[dff["athlete_url"] == url_best].medal_type.value_counts()
+        for item in results_best.iteritems():
+            res_str += str(item[1]) + " " + item[0] + " "
+
+    return res_str
+
+
+# Selectors -> best athlete image
+@app.callback(
+    Output("img_best", "children"),
+    Input("year-slider", "value"),
+    Input('pays_menu', 'value'),
+    Input('data_selector', 'value')
+)
+def update_img_best(year_slider, pays, sexe):
+
+    img_str = ""
+    dff = filter_dataframe(df, pays, sexe, year_slider)
+
+    if not dff.medal_type.notnull().values.any():
+        img_str = ""
+
+    else:
+        # Find the best
+        url_best = dff.groupby(by="athlete_url").count().sort_values(by="medal_type", ascending=False)[:1].index[0]
+        
+        # Photo for the best man and woman all time, to adapt for others
+        if url_best.split("/")[-1].split("-")[1] == 'dimas':
+            img_str = "greek_men.jpg"
+
+        elif url_best.split("/")[-1].split("-")[1] == 'korakaki':
+            img_str = "greek_women.jpg"
+
+        elif url_best.split("/")[-1].split("-")[1] == 'dibiasi':
+            img_str = "italy_men.jpg"
+
+        elif url_best.split("/")[-1].split("-")[1] == 'valentina':
+            img_str = "italy_women.jpg"
+
+        elif url_best.split("/")[-1].split("-")[1] == 'phelps':
+            img_str = "usa_men.jpg"
+
+        elif url_best.split("/")[-1].split("-")[1] == 'ledecky':
+            img_str = "usa_women.jpg"
+
+    image = html.Img(
+                src=app.get_asset_url(img_str),
+                id="plotly-image",
+                style={
+                    "height": "150px",
+                    "width": "auto",
+                    "margin-bottom": "25px",
+                }
+            )
+
+    return image
+
 
 
 if __name__ == '__main__':
